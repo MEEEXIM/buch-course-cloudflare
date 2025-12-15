@@ -1,10 +1,10 @@
+# wrangler.toml
 name = "buch-course"
-compatibility_date = "2024-06-01"
+compatibility_date = "2024-12-15"
 
-[[kv_namespaces]]
-binding = "ACCOUNTS"
-id = "00000000000000000000000000000000"  # ← замените после создания KV
+# Указываем, что это Pages-проект с функциями
+pages_build_output_dir = "."
 
-[[kv_namespaces]]
-binding = "CODES"
-id = "11111111111111111111111111111111"  # ← замените после создания KV
+# Важно: включаем поддержку функций в папке /functions
+[functions]
+# ничего не нужно писать — Cloudflare автоматически найдёт /functions/api/
