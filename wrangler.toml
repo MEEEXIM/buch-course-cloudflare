@@ -1,10 +1,7 @@
+# wrangler.toml
 name = "buch-course"
-compatibility_date = "2024-06-01"
+compatibility_date = "2024-12-15"
 
-[[kv_namespaces]]
-binding = "ACCOUNTS"
-id = "00000000000000000000000000000000"  # ← замените после создания KV
-
-[[kv_namespaces]]
-binding = "CODES"
-id = "11111111111111111111111111111111"  # ← замените после создания KV
+# Это отключает кастомные команды и заставляет Pages использовать стандартный процесс
+[build]
+command = ""
