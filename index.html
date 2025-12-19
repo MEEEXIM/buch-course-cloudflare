@@ -50,15 +50,16 @@
       font-size: 0.9rem;
     }
     .container {
-      max-width: 800px;
-      margin: 2rem auto;
+      max-width: 1000px;
+      margin: 0 auto;
       padding: 0 1.5rem;
     }
-    .auth-block {
+    .auth-block, .content {
       background: white;
       padding: 2rem;
       border-radius: 10px;
       box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      margin-bottom: 2rem;
     }
     .form-group { margin: 1rem 0; }
     label { display: block; margin-bottom: 0.5rem; font-weight: 600; }
@@ -78,6 +79,7 @@
       cursor: pointer;
       font-weight: 600;
     }
+    button:hover { opacity: 0.9; }
     .status { margin-top: 0.5rem; font-size: 0.9rem; }
     .status.success { color: var(--primary); }
     .status.error { color: #e76f51; }
@@ -87,6 +89,63 @@
       text-decoration: none;
       cursor: pointer;
     }
+    .tabs {
+      display: flex;
+      border-bottom: 2px solid #eee;
+      margin-bottom: 1.5rem;
+    }
+    .tab-btn {
+      padding: 0.8rem 1.5rem;
+      background: none;
+      border: none;
+      font-weight: 600;
+      color: var(--gray);
+      cursor: pointer;
+    }
+    .tab-btn.active {
+      color: var(--primary);
+      border-bottom: 3px solid var(--primary);
+    }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .video-grid {
+      display: grid;
+      gap: 1.5rem;
+    }
+    @media (min-width: 768px) {
+      .video-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    .card {
+      border: 1px solid #eee;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .video-preview {
+      background: #000;
+      height: 160px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 0.9rem;
+    }
+    .card-body { padding: 1.2rem; }
+    .card h3 { margin-bottom: 0.5rem; color: var(--dark); }
+    .card p { color: #555; margin-bottom: 1rem; font-size: 0.95rem; }
+    .qa-section { margin-top: 1.5rem; border-top: 1px dashed #eee; padding-top: 1.5rem; }
+    .qa-list { margin-top: 1rem; }
+    .qa-item { margin-bottom: 1.2rem; padding-bottom: 1.2rem; border-bottom: 1px solid #f0f0f0; }
+    .qa-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    .qa-question { font-weight: 600; color: var(--dark); margin-bottom: 0.4rem; }
+    .qa-answer { color: var(--primary); font-style: italic; }
+
+    .task-card { border-left: 4px solid var(--primary); }
+    .task-input { width: 100%; margin: 0.75rem 0; padding: 0.6rem; border: 1px solid #ddd; border-radius: 4px; }
+    .feedback { margin-top: 0.75rem; padding: 0.75rem; border-radius: 6px; display: none; }
+    .feedback.correct { display: block; background: #e6f7ee; color: #1a7f4a; }
+    .feedback.incorrect { display: block; background: #fdf2f2; color: #c00; }
+
     [data-lang="cz"] { display: none; }
     html[cz] [data-lang="ru"] { display: none !important; }
     html[cz] [data-lang="cz"] { display: block !important; }
@@ -107,77 +166,148 @@
   </header>
 
   <div class="container">
-    <div id="registerForm" class="auth-block">
-      <h2 data-lang="ru">Создайте аккаунт</h2>
-      <h2 data-lang="cz">Vytvořte účet</h2>
-      <div class="form-group">
-        <label for="email" data-lang="ru">Email</label>
-        <label for="email" data-lang="cz">E-mail</label>
-        <input type="email" id="email" required>
+    <!-- === ФОРМЫ АВТОРИЗАЦИИ === -->
+    <div id="authFlow">
+      <div id="registerForm" class="auth-block">
+        <h2 data-lang="ru">Создайте аккаунт</h2>
+        <h2 data-lang="cz">Vytvořte účet</h2>
+        <div class="form-group">
+          <label for="email" data-lang="ru">Email</label>
+          <label for="email" data-lang="cz">E-mail</label>
+          <input type="email" id="email" required>
+        </div>
+        <div class="form-group">
+          <label for="password" data-lang="ru">Пароль (от 6 символов)</label>
+          <label for="password" data-lang="cz">Heslo (od 6 znaků)</label>
+          <input type="password" id="password" minlength="6" required>
+        </div>
+        <button id="registerBtn" data-lang="ru">Зарегистрироваться</button>
+        <button id="registerBtn" data-lang="cz">Registrovat</button>
+        <div class="switch-form">
+          <a id="showLogin" data-lang="ru">Уже есть аккаунт? Войти</a>
+          <a id="showLogin" data-lang="cz">Již máte účet? Přihlásit se</a>
+        </div>
+        <div id="regStatus" class="status"></div>
       </div>
-      <div class="form-group">
-        <label for="password" data-lang="ru">Пароль (от 6 символов)</label>
-        <label for="password" data-lang="cz">Heslo (od 6 znaků)</label>
-        <input type="password" id="password" minlength="6" required>
+
+      <div id="loginForm" class="auth-block" style="display:none;">
+        <h2 data-lang="ru">Вход</h2>
+        <h2 data-lang="cz">Přihlášení</h2>
+        <div class="form-group">
+          <label for="loginEmail" data-lang="ru">Email</label>
+          <label for="loginEmail" data-lang="cz">E-mail</label>
+          <input type="email" id="loginEmail" required>
+        </div>
+        <div class="form-group">
+          <label for="loginPassword" data-lang="ru">Пароль</label>
+          <label for="loginPassword" data-lang="cz">Heslo</label>
+          <input type="password" id="loginPassword" required>
+        </div>
+        <button id="loginBtn" data-lang="ru">Войти</button>
+        <button id="loginBtn" data-lang="cz">Přihlásit se</button>
+        <div class="switch-form">
+          <a id="showRegister" data-lang="ru">Нет аккаунта? Зарегистрироваться</a>
+          <a id="showRegister" data-lang="cz">Nemáte účet? Registrovat</a>
+        </div>
+        <div id="loginStatus" class="status"></div>
       </div>
-      <button id="registerBtn" data-lang="ru">Зарегистрироваться</button>
-      <button id="registerBtn" data-lang="cz">Registrovat</button>
-      <div class="switch-form">
-        <a id="showLogin" data-lang="ru">Уже есть аккаунт? Войти</a>
-        <a id="showLogin" data-lang="cz">Již máte účet? Přihlásit se</a>
+
+      <div id="activateForm" class="auth-block" style="display:none;">
+        <h2 data-lang="ru">Активация доступа</h2>
+        <h2 data-lang="cz">Aktivace přístupu</h2>
+        <div class="form-group">
+          <label for="code" data-lang="ru">Код доступа</label>
+          <label for="code" data-lang="cz">Přístupový kód</label>
+          <input type="text" id="code" required>
+        </div>
+        <button id="activateBtn" data-lang="ru">Активировать</button>
+        <button id="activateBtn" data-lang="cz">Aktivovat</button>
+        <div class="switch-form">
+          <a id="backToLoginLink" data-lang="ru">← Назад</a>
+          <a id="backToLoginLink" data-lang="cz">← Zpět</a>
+        </div>
+        <div id="activateStatus" class="status"></div>
       </div>
-      <div id="regStatus" class="status"></div>
     </div>
 
-    <div id="loginForm" class="auth-block" style="display:none;">
-      <h2 data-lang="ru">Вход</h2>
-      <h2 data-lang="cz">Přihlášení</h2>
-      <div class="form-group">
-        <label for="loginEmail" data-lang="ru">Email</label>
-        <label for="loginEmail" data-lang="cz">E-mail</label>
-        <input type="email" id="loginEmail" required>
+    <!-- === ОСНОВНОЙ КОНТЕНТ (после активации) === -->
+    <div id="mainContent" class="content" style="display:none;">
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="videos" data-lang="ru">Видеоуроки</button>
+        <button class="tab-btn" data-tab="tasks" data-lang="ru">Задания и тесты</button>
+        
+        <button class="tab-btn active" data-tab="videos" data-lang="cz">Video lekce</button>
+        <button class="tab-btn" data-tab="tasks" data-lang="cz">Úkoly a testy</button>
       </div>
-      <div class="form-group">
-        <label for="loginPassword" data-lang="ru">Пароль</label>
-        <label for="loginPassword" data-lang="cz">Heslo</label>
-        <input type="password" id="loginPassword" required>
-      </div>
-      <button id="loginBtn" data-lang="ru">Войти</button>
-      <button id="loginBtn" data-lang="cz">Přihlásit se</button>
-      <div class="switch-form">
-        <a id="showRegister" data-lang="ru">Нет аккаунта? Зарегистрироваться</a>
-        <a id="showRegister" data-lang="cz">Nemáte účet? Registrovat</a>
-      </div>
-      <div id="loginStatus" class="status"></div>
-    </div>
 
-    <div id="activateForm" class="auth-block" style="display:none;">
-      <h2 data-lang="ru">Активация доступа</h2>
-      <h2 data-lang="cz">Aktivace přístupu</h2>
-      <div class="form-group">
-        <label for="code" data-lang="ru">Код доступа</label>
-        <label for="code" data-lang="cz">Přístupový kód</label>
-        <input type="text" id="code" required>
-      </div>
-      <button id="activateBtn" data-lang="ru">Активировать</button>
-      <button id="activateBtn" data-lang="cz">Aktivovat</button>
-      <div class="switch-form">
-        <a id="backToLoginLink" data-lang="ru">← Назад</a>
-        <a id="backToLoginLink" data-lang="cz">← Zpět</a>
-      </div>
-      <div id="activateStatus" class="status"></div>
-    </div>
+      <!-- Видеоуроки -->
+      <div id="videos" class="tab-content active">
+        <h2 data-lang="ru">Видеоуроки</h2>
+        <h2 data-lang="cz">Video lekce</h2>
+        <div class="video-grid">
+          <div class="card">
+            <div class="video-preview">▶️ Видео: Введение в чешскую бухгалтерию</div>
+            <div class="card-body">
+              <h3 data-lang="ru">Урок 1: Основы учёта в ЧР</h3>
+              <h3 data-lang="cz">Lekce 1: Základy účetnictví v ČR</h3>
+              <p data-lang="ru">Что такое DA, как вести учёт ИП, сроки сдачи отчётности.</p>
+              <p data-lang="cz">Co je DA, jak vést účetnictví pro OSVČ, lhůty pro podávání výkazů.</p>
+              <button class="ask-btn" data-video="1" data-lang="ru">Задать вопрос</button>
+              <button class="ask-btn" data-video="1" data-lang="cz">Položit otázku</button>
+              
+              <div class="qa-section">
+                <h4 data-lang="ru">Вопросы и ответы</h4>
+                <h4 data-lang="cz">Otázky a odpovědi</h4>
+                <div class="qa-list">
+                  <div class="qa-item">
+                    <div class="qa-question" data-lang="ru">Можно ли вести учёт в Excel, если обороты небольшие?</div>
+                    <div class="qa-question" data-lang="cz">Lze vést účetnictví v Excelu při malém obratu?</div>
+                    <div class="qa-answer" data-lang="ru">✅ Да, до 1 500 000 CZK оборота в год можно вести упрощённый учёт (DA) даже вручную.</div>
+                    <div class="qa-answer" data-lang="cz">✅ Ano, do obratu 1 500 000 CZK za rok lze vést zjednodušené účetnictví (DA) i ručně.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
 
-    <div id="content" class="auth-block" style="display:none;">
-      <h2 data-lang="ru">Добро пожаловать! Доступ активирован.</h2>
-      <h2 data-lang="cz">Vítejte! Přístup je aktivován.</h2>
-      <p data-lang="ru">Теперь вы можете смотреть уроки и проходить тесты.</p>
-      <p data-lang="cz">Nyní můžete sledovat lekce a absolvovat testy.</p>
+          <div class="card">
+            <div class="video-preview">▶️ Видео: Налог на прибыль — 2025</div>
+            <div class="card-body">
+              <h3 data-lang="ru">Урок 2: Налог на прибыль</h3>
+              <h3 data-lang="cz">Lekce 2: Daň z příjmu</h3>
+              <p data-lang="ru">Изменения в 2025 году, вычеты, расчёт авансов.</p>
+              <p data-lang="cz">Změny v roce 2025, odpočty, výpočet záloh.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Задания и тесты -->
+      <div id="tasks" class="tab-content">
+        <h2 data-lang="ru">Задания и тесты</h2>
+        <h2 data-lang="cz">Úkoly a testy</h2>
+        <div class="card task-card">
+          <div class="card-body">
+            <h3 data-lang="ru">Тест: Виды отчётности</h3>
+            <h3 data-lang="cz">Test: Druhy výkazů</h3>
+            <p data-lang="ru">Выберите правильные варианты:</p>
+            <p data-lang="cz">Vyberte správné možnosti:</p>
+            <div>
+              <label><input type="checkbox" name="test1" value="b"> Účetní závěrka</label><br>
+              <label><input type="checkbox" name="test1" value="c"> Daňové přiznání k DPH</label><br>
+              <label><input type="checkbox" name="test1" value="d"> Výkaz zisku a ztráty</label><br>
+            </div>
+            <button class="check-btn" data-task="1" data-lang="ru">Проверить</button>
+            <button class="check-btn" data-task="1" data-lang="cz">Zkontrolovat</button>
+            <div class="feedback" id="feedback1"></div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
   <script>
-    // Локализация
+    // === ЛОКАЛИЗАЦИЯ ===
     document.querySelectorAll('[data-set-lang]').forEach(btn => {
       btn.addEventListener('click', () => {
         const lang = btn.dataset.setLang;
@@ -189,7 +319,7 @@
       });
     });
 
-    // API-вызовы
+    // === API-ВЫЗОВЫ ===
     async function apiCall(endpoint, data) {
       const res = await fetch(`/api${endpoint}`, {
         method: 'POST',
@@ -199,12 +329,11 @@
       return res.json();
     }
 
-    // Регистрация
+    // === РЕГИСТРАЦИЯ ===
     document.getElementById('registerBtn').addEventListener('click', async () => {
-      const email = document.getElementById('email').value;
+      const email = document.getElementById('email').value.trim();
       const password = document.getElementById('password').value;
       const status = document.getElementById('regStatus');
-      
       try {
         const data = await apiCall('/register', { email, password });
         status.className = 'status success';
@@ -219,39 +348,38 @@
       }
     });
 
-    // Вход
+    // === ВХОД ===
+    let currentUser = null;
     document.getElementById('loginBtn').addEventListener('click', async () => {
-      const email = document.getElementById('loginEmail').value;
+      const email = document.getElementById('loginEmail').value.trim();
       const password = document.getElementById('loginPassword').value;
       const status = document.getElementById('loginStatus');
-      
       try {
         const data = await apiCall('/login', { email, password });
+        currentUser = email;
         if (data.hasAccess) {
-          document.getElementById('content').style.display = 'block';
-          document.getElementById('loginForm').style.display = 'none';
+          document.getElementById('authFlow').style.display = 'none';
+          document.getElementById('mainContent').style.display = 'block';
         } else {
           document.getElementById('loginForm').style.display = 'none';
           document.getElementById('activateForm').style.display = 'block';
         }
-        status.className = 'status success';
-        status.textContent = '✅ Вход успешен / ✅ Úspěšné přihlášení';
+        updateAccessStatus(data.accessUntil);
       } catch (err) {
         status.className = 'status error';
         status.textContent = `❌ ${err.message || 'Неверный email/пароль'}`;
       }
     });
 
-    // Активация
+    // === АКТИВАЦИЯ ===
     document.getElementById('activateBtn').addEventListener('click', async () => {
-      const email = document.getElementById('loginEmail').value;
-      const code = document.getElementById('code').value;
+      const code = document.getElementById('code').value.trim();
       const status = document.getElementById('activateStatus');
-      
       try {
-        const data = await apiCall('/activate', { email, code });
-        document.getElementById('activateForm').style.display = 'none';
-        document.getElementById('content').style.display = 'block';
+        const data = await apiCall('/activate', { email: currentUser, code });
+        document.getElementById('authFlow').style.display = 'none';
+        document.getElementById('mainContent').style.display = 'block';
+        updateAccessStatus(data.accessUntil);
         status.className = 'status success';
         status.textContent = '✅ Доступ активирован! / ✅ Přístup aktivován!';
       } catch (err) {
@@ -260,7 +388,22 @@
       }
     });
 
-    // Переключатели
+    // === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
+    function updateAccessStatus(accessUntil) {
+      const el = document.getElementById('accessStatus');
+      if (!currentUser) {
+        el.innerHTML = `<span data-lang="ru">Не в системе</span><span data-lang="cz">Nepřihlášen</span>`;
+        return;
+      }
+      if (accessUntil && Date.now() < accessUntil) {
+        const date = new Date(accessUntil).toLocaleDateString();
+        el.innerHTML = `<span data-lang="ru">Доступ до: ${date}</span><span data-lang="cz">Přístup do: ${date}</span>`;
+      } else {
+        el.innerHTML = `<span data-lang="ru">Доступ истёк</span><span data-lang="cz">Přístup vypršel</span>`;
+      }
+    }
+
+    // Переключатели форм
     document.getElementById('showLogin').onclick = () => {
       document.getElementById('registerForm').style.display = 'none';
       document.getElementById('loginForm').style.display = 'block';
@@ -273,6 +416,38 @@
       document.getElementById('activateForm').style.display = 'none';
       document.getElementById('loginForm').style.display = 'block';
     };
+
+    // Вкладки
+    document.querySelectorAll('[data-tab]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tabId = btn.dataset.tab;
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(tabId).classList.add('active');
+      });
+    });
+
+    // Проверка теста
+    document.querySelector('.check-btn')?.addEventListener('click', () => {
+      const checked = document.querySelectorAll('input[name="test1"]:checked');
+      const values = Array.from(checked).map(cb => cb.value);
+      const correct = ['b', 'c', 'd'];
+      const isCorrect = values.length === 3 && values.every(v => correct.includes(v));
+      
+      const feedback = document.getElementById('feedback1');
+      feedback.className = 'feedback ' + (isCorrect ? 'correct' : 'incorrect');
+      feedback.innerHTML = isCorrect 
+        ? '<span data-lang="ru">✅ Верно!</span><span data-lang="cz">✅ Správně!</span>'
+        : '<span data-lang="ru">❌ Неверно. Правильные: b, c, d</span><span data-lang="cz">❌ Špatně. Správné: b, c, d</span>';
+    });
+
+    // "Задать вопрос" — заглушка
+    document.querySelectorAll('.ask-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        alert('Форма вопроса будет отправлена владельцу курса.\nВ демо-версии это просто уведомление.');
+      });
+    });
   </script>
 </body>
 </html>
