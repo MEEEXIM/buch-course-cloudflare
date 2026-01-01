@@ -321,72 +321,129 @@
 
     // === API-ВЫЗОВЫ ===
     async function apiCall(endpoint, data) {
-      const res = await fetch(`/api${endpoint}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      });
-      return res.json();
+  const res = await fetch(`/api${endpoint}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+
+  // 🔥 КРИТИЧЕСКАЯ ПРОВЕРКА: если не 2xx — кидаем ошибку
+  if (!res.ok) {
+    let errorMessage = 'Ошибка сервера';
+    try {
+      const errorData = await res.json();
+      errorMessage = errorData.error || errorMessage;
+    } catch (e) {
+      // Если сервер вернул HTML (404), покажем типичную причину
+      if (res.status === 404) {
+        errorMessage = 'API не найдено — проверьте структуру functions/api/';
+      } else if (res.status === 400) {
+        errorMessage = 'Некорректные данные';
+      }
+    }
+    throw new Error(errorMessage);
+  }
+
+  return res.json();
+}
+
+    // === РЕГИСТРАЦИЯ (исправлено) ===
+document.getElementById('registerBtn').addEventListener('click', async () => {
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+  const status = document.getElementById('regStatus');
+  
+  // Валидация на фронтенде (для скорости)
+  if (!email || !password || password.length < 6) {
+    status.className = 'status error';
+    status.textContent = '❌ Email и пароль (≥6 символов) обязательны';
+    return;
+  }
+
+  try {
+    const data = await apiCall('/register', { email, password });
+    status.className = 'status success';
+    status.textContent = '✅ Аккаунт создан! / ✅ Účet vytvořen!';
+    
+    // Переключаем ТОЛЬКО после успеха
+    setTimeout(() => {
+      document.getElementById('registerForm').style.display = 'none';
+      document.getElementById('loginForm').style.display = 'block';
+    }, 800);
+  } catch (err) {
+    status.className = 'status error';
+    status.textContent = `❌ ${err.message}`;
+  }
+});
+
+// === ВХОД (исправлено) ===
+let currentUser = null;
+document.getElementById('loginBtn').addEventListener('click', async () => {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const status = document.getElementById('loginStatus');
+  
+  if (!email || !password) {
+    status.className = 'status error';
+    status.textContent = '❌ Заполните email и пароль';
+    return;
+  }
+
+  try {
+    const data = await apiCall('/login', { email, password });
+    currentUser = email;
+    
+    // 🔥 ЯВНАЯ ПРОВЕРКА: только если hasAccess === true
+    if (data.hasAccess === true) {
+      document.getElementById('authFlow').style.display = 'none';
+      document.getElementById('mainContent').style.display = 'block';
+      updateAccessStatus(data.accessUntil);
+    } else {
+      // Доступа нет → показываем активацию
+      document.getElementById('loginForm').style.display = 'none';
+      document.getElementById('activateForm').style.display = 'block';
+      updateAccessStatus(null);
+    }
+    
+    status.className = 'status success';
+    status.textContent = '✅ Вход успешен / ✅ Úspěšné přihlášení';
+  } catch (err) {
+    status.className = 'status error';
+    status.textContent = `❌ ${err.message}`;
+  }
+});
+
+// === АКТИВАЦИЯ (исправлено) ===
+document.getElementById('activateBtn').addEventListener('click', async () => {
+  const code = document.getElementById('code').value.trim();
+  const status = document.getElementById('activateStatus');
+  
+  if (!code) {
+    status.className = 'status error';
+    status.textContent = '❌ Введите код доступа';
+    return;
+  }
+
+  try {
+    // 🔥 Проверяем, что currentUser установлен
+    if (!currentUser) {
+      throw new Error('Сначала войдите в аккаунт');
     }
 
-    // === РЕГИСТРАЦИЯ ===
-    document.getElementById('registerBtn').addEventListener('click', async () => {
-      const email = document.getElementById('email').value.trim();
-      const password = document.getElementById('password').value;
-      const status = document.getElementById('regStatus');
-      try {
-        const data = await apiCall('/register', { email, password });
-        status.className = 'status success';
-        status.textContent = '✅ Аккаунт создан! / ✅ Účet vytvořen!';
-        setTimeout(() => {
-          document.getElementById('registerForm').style.display = 'none';
-          document.getElementById('loginForm').style.display = 'block';
-        }, 1000);
-      } catch (err) {
-        status.className = 'status error';
-        status.textContent = `❌ ${err.message || 'Ошибка'}`;
-      }
-    });
-
-    // === ВХОД ===
-    let currentUser = null;
-    document.getElementById('loginBtn').addEventListener('click', async () => {
-      const email = document.getElementById('loginEmail').value.trim();
-      const password = document.getElementById('loginPassword').value;
-      const status = document.getElementById('loginStatus');
-      try {
-        const data = await apiCall('/login', { email, password });
-        currentUser = email;
-        if (data.hasAccess) {
-          document.getElementById('authFlow').style.display = 'none';
-          document.getElementById('mainContent').style.display = 'block';
-        } else {
-          document.getElementById('loginForm').style.display = 'none';
-          document.getElementById('activateForm').style.display = 'block';
-        }
-        updateAccessStatus(data.accessUntil);
-      } catch (err) {
-        status.className = 'status error';
-        status.textContent = `❌ ${err.message || 'Неверный email/пароль'}`;
-      }
-    });
-
-    // === АКТИВАЦИЯ ===
-    document.getElementById('activateBtn').addEventListener('click', async () => {
-      const code = document.getElementById('code').value.trim();
-      const status = document.getElementById('activateStatus');
-      try {
-        const data = await apiCall('/activate', { email: currentUser, code });
-        document.getElementById('authFlow').style.display = 'none';
-        document.getElementById('mainContent').style.display = 'block';
-        updateAccessStatus(data.accessUntil);
-        status.className = 'status success';
-        status.textContent = '✅ Доступ активирован! / ✅ Přístup aktivován!';
-      } catch (err) {
-        status.className = 'status error';
-        status.textContent = `❌ ${err.message || 'Код недействителен'}`;
-      }
-    });
+    const data = await apiCall('/activate', { email: currentUser, code });
+    
+    // 🔥 УСПЕХ ТОЛЬКО если API вернул данные
+    document.getElementById('authFlow').style.display = 'none';
+    document.getElementById('mainContent').style.display = 'block';
+    updateAccessStatus(data.accessUntil);
+    
+    status.className = 'status success';
+    status.textContent = '✅ Доступ активирован! / ✅ Přístup aktivován!';
+  } catch (err) {
+    status.className = 'status error';
+    status.textContent = `❌ ${err.message}`;
+  }
+});
 
     // === ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===
     function updateAccessStatus(accessUntil) {
