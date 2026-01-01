@@ -1,21 +1,15 @@
 export async function onRequest(context) {
   try {
-    const body = await context.request.text();
-    const data = JSON.parse(body);
+    const data = await context.request.json();
     const { email, code } = data;
 
-    // Проверяем, что ACCOUNTS доступен
-    if (!context.env.ACCOUNTS) {
-      return new Response(JSON.stringify({ error: "ACCOUNTS не подключён" }), { status: 500 });
-    }
-
-    const key = email.toLowerCase();
-    const accountData = await context.env.ACCOUNTS.get(key);
+    const accountData = await context.env.ACCOUNTS.get(email.toLowerCase());
+    const codeData = await context.env.CODES.get(code.toUpperCase());
 
     return new Response(JSON.stringify({
       ok: true,
-      email,
-      accountData: accountData || "null"
+      account: !!accountData,
+      code: codeData || "не найден"
     }), {
       headers: { "Content-Type": "application/json" }
     });
