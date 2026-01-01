@@ -1,23 +1,21 @@
 export async function onRequest(context) {
   try {
-    // 1. Получаем и логируем тело запроса
     const body = await context.request.text();
-    console.log("📥 Тело запроса:", body);
+    const data = JSON.parse(body);
+    const { email, code } = data;
 
-    // 2. Парсим JSON вручную (без .json() — чтобы избежать ошибок)
-    let data;
-    try {
-      data = JSON.parse(body);
-    } catch (e) {
-      return new Response(JSON.stringify({ error: "Некорректный JSON: " + e.message }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" }
-      });
+    // Проверяем, что ACCOUNTS доступен
+    if (!context.env.ACCOUNTS) {
+      return new Response(JSON.stringify({ error: "ACCOUNTS не подключён" }), { status: 500 });
     }
+
+    const key = email.toLowerCase();
+    const accountData = await context.env.ACCOUNTS.get(key);
 
     return new Response(JSON.stringify({
       ok: true,
-      received: data
+      email,
+      accountData: accountData || "null"
     }), {
       headers: { "Content-Type": "application/json" }
     });
