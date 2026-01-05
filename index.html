@@ -413,7 +413,13 @@ document.getElementById('loginBtn').addEventListener('click', async () => {
     status.textContent = '✅ Вход успешен / ✅ Úspěšné přihlášení';
   } catch (err) {
     status.className = 'status error';
-    status.textContent = `❌ ${err.message}`;
+    
+    // Особое сообщение для устройства
+    if (err.message.includes('устройства')) {
+      status.textContent = '🔒 Доступ запрещён: подписка привязана к другому устройству.';
+    } else {
+      status.textContent = `❌ ${err.message}`;
+    }
   }
 });
 
