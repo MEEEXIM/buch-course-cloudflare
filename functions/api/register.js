@@ -1,55 +1,66 @@
 export async function onRequest(context) {
+  // 🔍 1. Лог: функция запущена
+  console.log("🚀 [LOG] register.js: функция запущена");
+  
   try {
-    // 1. Получаем данные
-    const { email, code, deviceId } = await context.request.json(); // ← ДОБАВЛЕНО: deviceId
-    if (!email || !code) {
-      return new Response(JSON.stringify({ error: "Email и код обязательны" }), { status: 400 });
+    // 🔍 2. Лог: тело запроса
+    const body = await context.request.text();
+    console.log("📩 [LOG] Тело запроса:", body);
+    
+    // Парсим JSON вручную — чтобы избежать ошибок при пустом теле
+    let data;
+    try {
+      data = JSON.parse(body);
+    } catch (e) {
+      console.log("❌ [LOG] Ошибка парсинга JSON:", e.message);
+      return new Response(JSON.stringify({ error: "Некорректный JSON" }), { status: 400 });
+    }
+
+    const { email, password, deviceId } = data; // ← ДОБАВЛЕНО: deviceId
+    console.log("📧 [LOG] Email:", email, "| Пароль (длина):", password?.length, "| DeviceId:", deviceId);
+
+    if (!email || !password || password.length < 6) {
+      console.log("⚠️ [LOG] Валидация не пройдена");
+      return new Response(JSON.stringify({ error: "Email и пароль (≥6) обязательны" }), { status: 400 });
     }
 
     const key = email.toLowerCase();
 
-    // 2. Проверяем аккаунт
-    const accountData = await context.env.ACCOUNTS.get(key);
-    if (!accountData) {
-      return new Response(JSON.stringify({ error: "Аккаунт не найден" }), { status: 404 });
+    // 🔍 3. Лог: читаем из KV
+    const existing = await context.env.ACCOUNTS.get(key);
+    console.log("📖 [LOG] ACCOUNTS.get('" + key + "') →", existing);
+
+    if (existing) {
+      console.log("❗ [LOG] Аккаунт уже существует");
+      return new Response(JSON.stringify({ error: "Аккаунт уже существует" }), { status: 409 });
     }
 
-    // 3. Проверяем код
-    const expiresAtStr = await context.env.CODES.get(code.toUpperCase());
-    if (expiresAtStr === null) {
-      return new Response(JSON.stringify({ error: "Код недействителен или уже использован" }), { status: 400 });
-    }
+    // Хешируем пароль
+    const hashBuffer = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(password));
+    const hashHex = Array.from(new Uint8Array(hashBuffer))
+      .map(b => b.toString(16).padStart(2, "0"))
+      .join("");
+    console.log("🔐 [LOG] Хеш пароля:", hashHex.substring(0, 8) + "...");
 
-    // 4. Преобразуем срок
-    const expiresAt = Number(expiresAtStr);
-    if (isNaN(expiresAt)) {
-      return new Response(JSON.stringify({ error: "Некорректный срок действия кода" }), { status: 500 });
-    }
-
-    // 5. Обновляем аккаунт
-    const account = JSON.parse(accountData);
-    account.accessUntil = expiresAt;
-
-    // 🔑 ОБЯЗАТЕЛЬНАЯ ПРИВЯЗКА УСТРОЙСТВА при активации
+    // 🔍 4. Лог: пишем в KV — с deviceId, если есть
+    const account = { hash: hashHex };
     if (deviceId) {
       account.deviceId = deviceId;
-      console.log("📱 [LOG] Устройство привязано при активации:", deviceId);
-    } else {
-      console.log("⚠️ [LOG] deviceId не передан при активации — привязка НЕ выполнена!");
+      console.log("📱 [LOG] Привязка устройства:", deviceId);
     }
 
-    // 6. Сохраняем + удаляем код
     await context.env.ACCOUNTS.put(key, JSON.stringify(account));
-    await context.env.CODES.delete(code.toUpperCase());
+    console.log("✅ [LOG] ACCOUNTS.put('" + key + "') — УСПЕШНО");
 
-    // 7. Успех!
-    return new Response(JSON.stringify({
-      ok: true,
-      accessUntil: expiresAt
-    }), {
+    return new Response(JSON.stringify({ ok: true }), {
       headers: { "Content-Type": "application/json" }
     });
 
+  } catch (err) {
+    console.log("💥 [LOG] КРИТИЧЕСКАЯ ОШИБКА:", err.message, err.stack);
+    return new Response(JSON.stringify({ error: "Ошибка сервера", details: err.message }), { status: 500 });
+  }
+}
   } catch (err) {
     // Логируем ошибку в Cloudflare (если понадобится)
     console.error("Ошибка в activate.js:", err.message);
