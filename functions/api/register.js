@@ -61,7 +61,7 @@ export async function onRequest(context) {
     return new Response(JSON.stringify({ error: "Ошибка сервера", details: err.message }), { status: 500 });
   }
 }
-  } catch (err) {
+  catch (err) {
     // Логируем ошибку в Cloudflare (если понадобится)
     console.error("Ошибка в activate.js:", err.message);
     return new Response(JSON.stringify({
