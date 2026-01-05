@@ -390,7 +390,11 @@ document.getElementById('loginBtn').addEventListener('click', async () => {
   }
 
   try {
-    const data = await apiCall('/login', { email, password });
+    const data = await apiCall('/login', { 
+      email, 
+      password, 
+      deviceId: getDeviceId()   // ← добавили
+    });
     currentUser = email;
     
     // 🔥 ЯВНАЯ ПРОВЕРКА: только если hasAccess === true
@@ -430,7 +434,11 @@ document.getElementById('activateBtn').addEventListener('click', async () => {
       throw new Error('Сначала войдите в аккаунт');
     }
 
-    const data = await apiCall('/activate', { email: currentUser, code });
+    const data = await apiCall('/activate', { 
+      email: currentUser, 
+      code, 
+      deviceId: getDeviceId()   // ← добавили
+    });
     
     // 🔥 УСПЕХ ТОЛЬКО если API вернул данные
     document.getElementById('authFlow').style.display = 'none';
