@@ -370,7 +370,7 @@ document.getElementById('registerBtn').addEventListener('click', async () => {
       document.getElementById('registerForm').style.display = 'none';
       document.getElementById('loginForm').style.display = 'block';
     }, 800);
-  } catch (err) {
+  catch (err) {
     status.className = 'status error';
     status.textContent = `❌ ${err.message}`;
   }
@@ -411,7 +411,7 @@ document.getElementById('loginBtn').addEventListener('click', async () => {
     
     status.className = 'status success';
     status.textContent = '✅ Вход успешен / ✅ Úspěšné přihlášení';
-  } catch (err) {
+  catch (err) {
     status.className = 'status error';
     
     // Особое сообщение для устройства
@@ -453,7 +453,7 @@ document.getElementById('activateBtn').addEventListener('click', async () => {
     
     status.className = 'status success';
     status.textContent = '✅ Доступ активирован! / ✅ Přístup aktivován!';
-  } catch (err) {
+  catch (err) {
     status.className = 'status error';
     status.textContent = `❌ ${err.message}`;
   }
