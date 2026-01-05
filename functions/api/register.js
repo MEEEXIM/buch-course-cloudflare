@@ -7,7 +7,7 @@ export async function onRequest(context) {
     const body = await context.request.text();
     console.log("📩 [LOG] Тело запроса:", body);
     
-    // Парсим JSON вручную — чтобы избежать ошибок при пустом телевыфвфыфыаеапыгнегорзщгшнепкагошекнгфыкен7нныв
+    // Парсим JSON вручную — чтобы избежать ошибок при пустом теле
     let data;
     try {
       data = JSON.parse(body);
@@ -16,8 +16,8 @@ export async function onRequest(context) {
       return new Response(JSON.stringify({ error: "Некорректный JSON" }), { status: 400 });
     }
 
-    const { email, password } = data;
-    console.log("📧 [LOG] Email:", email, "| Пароль (длина):", password?.length);
+    const { email, password, deviceId } = data; // ← ДОБАВЛЕНО: deviceId
+    console.log("📧 [LOG] Email:", email, "| Пароль (длина):", password?.length, "| DeviceId:", deviceId);
 
     if (!email || !password || password.length < 6) {
       console.log("⚠️ [LOG] Валидация не пройдена");
@@ -42,8 +42,14 @@ export async function onRequest(context) {
       .join("");
     console.log("🔐 [LOG] Хеш пароля:", hashHex.substring(0, 8) + "...");
 
-    // 🔍 4. Лог: пишем в KV
-    await context.env.ACCOUNTS.put(key, JSON.stringify({ hash: hashHex }));
+    // 🔍 4. Лог: пишем в KV — с deviceId, если есть
+    const account = { hash: hashHex };
+    if (deviceId) {
+      account.deviceId = deviceId;
+      console.log("📱 [LOG] Привязка устройства:", deviceId);
+    }
+
+    await context.env.ACCOUNTS.put(key, JSON.stringify(account));
     console.log("✅ [LOG] ACCOUNTS.put('" + key + "') — УСПЕШНО");
 
     return new Response(JSON.stringify({ ok: true }), {
