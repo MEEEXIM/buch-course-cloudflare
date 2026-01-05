@@ -519,7 +519,9 @@ document.getElementById('activateBtn').addEventListener('click', async () => {
         alert('Форма вопроса будет отправлена владельцу курса.\nВ демо-версии это просто уведомление.');
       });
     });
-        // Генерация уникального ID устройства (работает везде, включая приватный режим)
+  }); // ← ЗАКРЫВАЕМ ВНЕШНИЙ forEach от [data-set-lang]!
+
+  // Генерация уникального ID устройства (работает везде, включая приватный режим)
   function getDeviceId() {
     const storageKey = '__device_id__';
     
@@ -528,17 +530,17 @@ document.getElementById('activateBtn').addEventListener('click', async () => {
       let id = localStorage.getItem(storageKey);
       if (id) return id;
     } catch (e) {}
-  
+
     // Если нет — создаём новый
     const timestamp = Date.now().toString(36);
     const random = Math.random().toString(36).substr(2, 9);
     const id = `d_${timestamp}_${random}`;
-  
+
     // Сохраняем (если можно)
     try {
       localStorage.setItem(storageKey, id);
     } catch (e) {}
-  
+
     return id;
   }
   </script>
