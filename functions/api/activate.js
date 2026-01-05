@@ -1,7 +1,7 @@
 export async function onRequest(context) {
   try {
     // 1. Получаем данные
-    const { email, code } = await context.request.json();
+    const { email, code, deviceId } = await context.request.json(); // ← ДОБАВЛЕНО: deviceId
     if (!email || !code) {
       return new Response(JSON.stringify({ error: "Email и код обязательны" }), { status: 400 });
     }
@@ -29,6 +29,14 @@ export async function onRequest(context) {
     // 5. Обновляем аккаунт
     const account = JSON.parse(accountData);
     account.accessUntil = expiresAt;
+
+    // 🔑 ОБЯЗАТЕЛЬНАЯ ПРИВЯЗКА УСТРОЙСТВА при активации
+    if (deviceId) {
+      account.deviceId = deviceId;
+      console.log("📱 [LOG] Устройство привязано при активации:", deviceId);
+    } else {
+      console.log("⚠️ [LOG] deviceId не передан при активации — привязка НЕ выполнена!");
+    }
 
     // 6. Сохраняем + удаляем код
     await context.env.ACCOUNTS.put(key, JSON.stringify(account));
