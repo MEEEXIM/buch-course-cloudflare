@@ -41,10 +41,22 @@ export async function onRequest(context) {
       });
     }
 
+    // Проверяем, активен ли доступ СЕЙЧАС
+    const now = Date.now();
+    const hasAccess = account.accessUntil && now < account.accessUntil;
+    
+    // Если срок истёк — удаляем привязку (опционально)
+    if (account.accessUntil && now >= account.accessUntil) {
+      // Можно очистить accessUntil и deviceId, чтобы требовать новую активацию
+      delete account.accessUntil;
+      delete account.deviceId;
+      await context.env.ACCOUNTS.put(key, JSON.stringify(account));
+    }
+    
     return new Response(JSON.stringify({
       ok: true,
-      hasAccess: accessUntil && Date.now() < accessUntil,
-      accessUntil: accessUntil || null
+      hasAccess: hasAccess,
+      accessUntil: account.accessUntil || null
     }), {
       headers: { "Content-Type": "application/json" }
     });
