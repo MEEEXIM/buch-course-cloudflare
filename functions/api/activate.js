@@ -1,57 +1,46 @@
 export async function onRequest(context) {
   try {
-    // 1. Получаем данные
-    const { email, code, deviceId } = await context.request.json(); // ← ДОБАВЛЕНО: deviceId
+    const { email, code, deviceId } = await context.request.json();
     if (!email || !code) {
       return new Response(JSON.stringify({ error: "Email и код обязательны" }), { status: 400 });
     }
 
     const key = email.toLowerCase();
 
-    // 2. Проверяем аккаунт
     const accountData = await context.env.ACCOUNTS.get(key);
     if (!accountData) {
       return new Response(JSON.stringify({ error: "Аккаунт не найден" }), { status: 404 });
     }
 
-    // 3. Проверяем код
-    const expiresAtStr = await context.env.CODES.get(code.toUpperCase());
-    if (expiresAtStr === null) {
+    // Проверяем, что код существует (но НЕ используем его значение как срок!)
+    const codeExists = await context.env.CODES.get(code.toUpperCase());
+    if (codeExists === null) {
       return new Response(JSON.stringify({ error: "Код недействителен или уже использован" }), { status: 400 });
     }
 
-    // 4. Преобразуем срок
-    const expiresAt = Number(expiresAtStr);
-    if (isNaN(expiresAt)) {
-      return new Response(JSON.stringify({ error: "Некорректный срок действия кода" }), { status: 500 });
-    }
+    // ✅ ВСЕГДА даём доступ на 30 дней с момента активации
+    const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+    const accessUntil = Date.now() + THIRTY_DAYS_MS;
 
-    // 5. Обновляем аккаунт
     const account = JSON.parse(accountData);
-    account.accessUntil = expiresAt;
+    account.accessUntil = accessUntil;
 
-    // 🔑 ОБЯЗАТЕЛЬНАЯ ПРИВЯЗКА УСТРОЙСТВА при активации
     if (deviceId) {
       account.deviceId = deviceId;
-      console.log("📱 [LOG] Устройство привязано при активации:", deviceId);
-    } else {
-      console.log("⚠️ [LOG] deviceId не передан при активации — привязка НЕ выполнена!");
     }
 
-    // 6. Сохраняем + удаляем код
+    // Сохраняем аккаунт и удаляем код
     await context.env.ACCOUNTS.put(key, JSON.stringify(account));
     await context.env.CODES.delete(code.toUpperCase());
 
-    // 7. Успех!
     return new Response(JSON.stringify({
       ok: true,
-      accessUntil: expiresAt
+      accessUntil: accessUntil
     }), {
       headers: { "Content-Type": "application/json" }
     });
 
   } catch (err) {
-    // Логируем ошибку в Cloudflare (если понадобится)
     console.error("Ошибка в activate.js:", err.message);
     return new Response(JSON.stringify({
       error: "Ошибка активации",
